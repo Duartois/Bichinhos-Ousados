@@ -607,3 +607,21 @@
     @apply text-2xl cursor-pointer;
   }
 }
+
+@layer components {
+  .product__item {
+    @apply bg-white;
+  }
+  .product__badge {
+    @apply text-xs font-semibold;
+  }
+  .new__price {
+    @apply text-lg font-bold;
+  }
+  .old__price {
+    @apply text-sm line-through text-gray-400;
+  }
+  .tab__btn.active-tab {
+    @apply bg-[var(--first-color)] text-white;
+  }
+}

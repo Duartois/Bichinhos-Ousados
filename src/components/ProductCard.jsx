@@ -1,128 +1,55 @@
-import { Link } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 
-/**
- * ProductCard
- * Props:
- * - id: string|number
- * - to: string (rota de detalhes, ex: `/product/123`)
- * - title: string
- * - category: string
- * - image: { default: string, hover?: string }
- * - badge?: { text: string, tone?: "light-pink"|"light-green"|"light-orange"|"light-blue" }
- * - rating?: { value: number, count?: number } // value 0..5
- * - price?: { new: number|string, old?: number|string, currency?: string } // ex: "R$"
- * - onAddToCart?: (payload) => void
- */
-const ProductCard = ({
-  id,
-  to = "#",
-  title,
-  category,
-  image = { default: "/assets/img/product.png", hover: "" },
-  badge,
-  rating = { value: 0, count: 0 },
-  price = { new: "", old: "", currency: "R$" },
-  onAddToCart,
-}) => {
-  const stars = Array.from({ length: 5 }, (_, i) => i < Math.round(rating.value));
+const ProductCard = ({ product }) => {
+  const { addToCart } = useCart();
 
-  const handleAdd = (e) => {
-    e.preventDefault();
-    if (onAddToCart) {
-      onAddToCart({ id, title, priceNew: price.new });
-    }
-    // Mantém compat com scripts legados que escutam .add-cart
-    const btn = e.currentTarget;
-    btn.dispatchEvent(new CustomEvent("add-cart-click", { bubbles: true }));
-  };
+  // Badge: Novo / Destaque / Popular
+  let badgeLabel = "";
+  const createdAt = new Date(product.createdAt);
+  const diffDays = Math.ceil(Math.abs(new Date() - createdAt) / (1000 * 60 * 60 * 24));
+  if (diffDays <= 30) {
+    badgeLabel = "Novo";
+  } else if (Number(product.savePrice) >= 50) {
+    badgeLabel = "Destaque";
+  } else if (product.salesCount > 10) {
+    badgeLabel = "Popular";
+  }
 
   return (
-    <article className="product__item group" data-id={id}>
-      {/* Banner / Imagens */}
-      <div className="product__banner">
-        <Link to={to} className="product__images">
-          <img
-            src={image.default}
-            alt={title}
-            className="product__img default"
-            loading="lazy"
-          />
-          {image.hover ? (
-            <img
-              src={image.hover}
-              alt={`${title} (hover)`}
-              className="product__img hover"
-              loading="lazy"
-            />
-          ) : null}
-        </Link>
-
-        {/* Badge opcional */}
-        {badge?.text ? (
-          <span className={`product__badge ${badge?.tone || ""}`}>{badge.text}</span>
-        ) : null}
-
-        {/* Ações sobrepostas */}
-        <div className="product__actions">
-          <button className="action__btn" aria-label="Visualizar">
-            <i className="bx bx-show" />
-          </button>
-          <button className="action__btn" aria-label="Favoritar">
-            <i className="bx bx-heart" />
-          </button>
-          <button className="action__btn" aria-label="Comparar">
-            <i className="bx bx-git-compare" />
-          </button>
-        </div>
+    <div className="product__item border rounded-lg overflow-hidden shadow hover:shadow-lg transition">
+      <div className="relative product__banner">
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-full h-60 object-cover cursor-pointer"
+        />
+        {badgeLabel && (
+          <div className="product__badge absolute top-2 left-2 bg-pink-500 text-white text-xs px-2 py-1 rounded">
+            {badgeLabel}
+          </div>
+        )}
       </div>
-
-      {/* Conteúdo */}
-      <div className="product__content">
-        <span className="product__category">{category}</span>
-
-        <h3 className="product__title">
-          <Link to={to} className="line-clamp-2">
-            {title}
-          </Link>
-        </h3>
-
-        {/* Rating */}
-        <div className="product__rating flex items-center gap-1">
-          {stars.map((filled, i) => (
-            <i
-              key={i}
-              className={`bx ${filled ? "bxs-star" : "bx-star"}`}
-              aria-hidden
-            />
-          ))}
-          {typeof rating.count === "number" && (
-            <span className="text-gray-500 text-xs ml-1">({rating.count})</span>
+      <div className="product__content p-4">
+        <span className="text-xs text-gray-500">{product.tags}</span>
+        <h3 className="font-semibold">{product.name}</h3>
+        <div className="product__price flex gap-2 items-center">
+          <span className="new__price font-bold text-[var(--first-color)]">
+            R${product.price}
+          </span>
+          {product.oldPrice && (
+            <span className="old__price">R${product.oldPrice}</span>
           )}
         </div>
-
-        {/* Preço */}
-        <div className="product__price flex items-center gap-2">
-          <span className="new__price">
-            {price.currency}{price.new}
-          </span>
-          {price.old ? (
-            <span className="old__price">
-              {price.currency}{price.old}
-            </span>
-          ) : null}
-        </div>
-
-        {/* Add to cart (compat com scripts: classe add-cart + data-id) */}
         <button
-          className="cart__btn btn btn--sm add-cart"
-          data-id={id}
-          onClick={handleAdd}
+          className="add-cart mt-2 px-3 py-2 bg-[var(--first-color)] text-white rounded text-sm hover:opacity-90"
+          onClick={() => addToCart(product)}
         >
-          Adicionar
+          + Carrinho
         </button>
       </div>
-    </article>
+    </div>
   );
 };
 
 export default ProductCard;
+
