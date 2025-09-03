@@ -3,34 +3,43 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Category from "./pages/Category";
-import Dashboard from "./pages/Dashboard";
-import Login from "./pages/Login";
+import { UserDashboard, SellerDashboard } from "./pages/dashboard";
+import Login from "./pages/Login";        // <-- ADICIONAR
 import Register from "./pages/Register";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Success from "./pages/Success";
 import Cancel from "./pages/Cancel";
+import { AuthProvider } from "./context/AuthContext";
+import { RequireAuth, RequireSeller } from "./routes/guards";
 
 function App() {
   return (
     <Router>
-      <Header />
-      <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/category" element={<Category />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/product/:id" element={<ProductDetails />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/success" element={<Success />} />
-          <Route path="/cancel" element={<Cancel />} />
-        </Routes>
-      </main>
-      <Footer />
+      <AuthProvider>
+        <Header />
+        <main>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/category" element={<Category />} />
+              <Route path="/account" element={
+                <RequireAuth><UserDashboard /></RequireAuth>
+              } />
+              <Route path="/dashboard" element={
+                <RequireSeller><SellerDashboard /></RequireSeller>
+              } />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/success" element={<Success />} />
+            <Route path="/cancel" element={<Cancel />} />
+          </Routes>
+        </main>
+        <Footer />
+      </AuthProvider>
     </Router>
   );
 }

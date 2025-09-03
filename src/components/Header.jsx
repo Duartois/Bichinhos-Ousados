@@ -1,200 +1,381 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { ShoppingCart, User, Search, ChevronUp } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import Cart from "../pages/Cart";
-import { IoPersonCircleOutline } from "react-icons/io5";
-import { FiShoppingCart, FiMenu, FiX, FiSearch } from "react-icons/fi";
+import ProductCardMini from "../components/ProductCardMini";
+import api from "../services/api";
+import UserMenu from "../components/UserMenu";
+
+const normalize = (s = "") =>
+  String(s)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [closingMenu, setClosingMenu] = useState(false); // 🔹 estado para animação do menu
+  const [menuClosing, setMenuClosing] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchClosing, setSearchClosing] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const [userPopup, setUserPopup] = useState(false);
+
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(false);
+
   const { cartCount } = useCart();
-  const popupRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (popupRef.current && !popupRef.current.contains(e.target)) {
-        setUserPopup(false);
-      }
-    };
-    if (userPopup) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [userPopup]);
-
-  const handleCloseMenu = () => {
-    setClosingMenu(true);
-    setTimeout(() => {
-      setClosingMenu(false);
-      setMenuOpen(false);
-    }, 350); // tempo da animação
-  };
   const isLoggedIn = !!sessionStorage.getItem("user");
 
+  const menuRef = useRef(null);
+  const searchRef = useRef(null);
+  const desktopSearchRef = useRef(null);
+
+  const navigate = useNavigate();
+
+  const handleCloseMenu = () => {
+    setMenuClosing(true);
+    setTimeout(() => {
+      setMenuClosing(false);
+      setMenuOpen(false);
+    }, 350);
+  };
+
+  const handleCloseSearch = () => {
+    setSearchClosing(true);
+    setTimeout(() => {
+      setSearchClosing(false);
+      setSearchOpen(false);
+      setQuery(""); // 🔹 limpa o campo de busca
+    }, 350);
+  };
+
+
+  // ==== clickoutside ====
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (menuOpen && menuRef.current && !menuRef.current.contains(e.target)) {
+        handleCloseMenu();
+      }
+      if (searchOpen && searchRef.current && !searchRef.current.contains(e.target)) {
+        handleCloseSearch();
+      }
+      if (desktopOpen && desktopSearchRef.current && !desktopSearchRef.current.contains(e.target)) {
+        setDesktopOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen, searchOpen, desktopOpen]);
+
+  // ==== busca produtos ====
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      if (query.trim().length < 3) {
+        setResults([]);
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const res = await api.post("/get-products");
+        const all = res.data || [];
+
+        const term = normalize(query);
+        const filtered = all.filter((p) => {
+          const name = normalize(p.name || p.title || "");
+          const cat = normalize(p.category || "");
+          return name.includes(term) || cat.includes(term);
+        });
+
+        setResults(filtered.slice(0, 5));
+      } catch (err) {
+        console.error("Erro na busca:", err);
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
   return (
-    <header className="shadow-sm bg-white z-[200]">
-      {/* Top bar */}
-      <div className="bg-gray-100 border-b text-[10px] sm:text-xs md:text-sm py-1 sm:py-2">
-        <div className="container flex flex-col sm:flex-row justify-between items-center gap-0.5 sm:gap-2">
-          <div className="flex gap-2 text-gray-600">
-            <span>(11) 98111-7150</span>
-            <span>| Nosso Contato</span>
+    <header className="w-full shadow-md relative z-[150]">
+      {/* ===== Faixa branca ===== */}
+      <div className="bg-white">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
+          {/* Mobile: menu + lupa */}
+          <div className="flex items-center gap-3 md:hidden">
+            <button onClick={() => setMenuOpen(true)} className="text-gray-700 hover:text-[var(--first-color)]">☰</button>
+            <button onClick={() => setSearchOpen(true)} className="text-gray-700 hover:text-[var(--first-color)]">
+              <Search size={22} />
+            </button>
           </div>
-          <p className="text-cyan-700 font-medium">Ofertas imperdíveis</p>
-          <Link to="/login" className="text-cyan-600 hover:underline">
-            Log In / Sign up
+
+          {/* Logo */}
+          <Link to="/" className="flex-shrink-0">
+            <img  />
           </Link>
-        </div>
-      </div>
 
-
-      {/* Nav */}
-      <nav className="container flex justify-between items-center py-2 sm:py-3 md:py-4">
-        {/* Logo */}
-        <Link to="/" className="flex items-center">
-          <img
-            src="/assets/img/logo.svg"
-            alt="logo"
-            className="w-28 sm:w-36"
-          />
-
-        </Link>
-
-        {/* Menu Desktop */}
-        <ul className="hidden md:flex gap-8 text-gray-800 font-medium">
-          <li><Link to="/" className="hover:text-cyan-600">Inicio</Link></li>
-          <li><Link to="/category" className="hover:text-cyan-600">Catálogo</Link></li>
-          <li>
-            <Link
-              to={isLoggedIn ? "/dashboard" : "/login"}
-              className="hover:text-cyan-600"
+          {/* Search desktop */}
+          <div ref={desktopSearchRef} className="hidden md:block flex-grow max-w-xl mx-6 relative">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!query.trim()) return;
+                navigate(`/category?search=${encodeURIComponent(query.trim())}`);
+              }}
+              className="flex"
             >
-              Minha Conta
-            </Link>
-          </li>
-          <li><Link to="/login" className="hover:text-cyan-600">Login</Link></li>
-        </ul>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => setDesktopOpen(true)}
+                placeholder="Buscar produtos..."
+                className="w-full h-10 px-4 rounded-full border border-gray-300 focus:ring-2 focus:ring-[var(--first-color)] outline-none transition"
+              />
+              <button type="submit" className="ml-[-36px]">
+                <Search size={20} className="text-gray-600" />
+              </button>
+            </form>
 
-        {/* User + Cart */}
-        <div className="flex items-center gap-4">
-          {/* Search bar */}
-          <div className="relative hidden md:block">
-            <div className="relative group">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const term = e.target.search.value;
-                  window.location.href = `/category?search=${encodeURIComponent(term)}`;
-                }}
-                className="relative group"
-              >
-                <input
-                  type="text"
-                  name="search"
-                  placeholder="Buscar produtos..."
-                  className="h-11 w-11 group-hover:w-80 focus:w-80 rounded-full border border-gray-200 pr-11 text-sm 
-               focus:ring-2 focus:ring-cyan-500 transition-all duration-500 ease-in-out 
-               group-hover:pl-4 focus:pl-4 bg-white focus:outline-none"
-                />
-                <FiSearch
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-all"
-                />
-              </form>
-
-            </div>
-          </div>
-          {/* User */}
-          <div className="relative" ref={popupRef}>
-            <IoPersonCircleOutline
-              id="user-icon"
-              className="text-xl sm:text-2xl md:text-3xl cursor-pointer text-gray-700 hover:text-cyan-600"
-              onClick={() => setUserPopup(!userPopup)}
-            />
-            {userPopup && (
-              <div className="absolute top-full right-0 mt-2 w-60 bg-white border border-cyan-600 rounded-lg shadow-lg p-4 z-[100]">
-                <p className="mb-3 text-gray-800">Olá, visitante!</p>
-                <Link
-                  to="/login"
-                  className="block bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700 transition"
-                  onClick={() => setUserPopup(false)}
-                >
-                  Entrar
-                </Link>
+            {(desktopOpen && query.length >= 3) && (
+              <div className="absolute z-10 left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 animate-fadeIn">
+                {loading ? (
+                  <div className="p-4 flex items-center gap-3">
+                    <div className="h-5 w-5 rounded-full border-2 border-gray-300 border-t-transparent animate-spin" />
+                    <span className="text-sm text-gray-500">Procurando...</span>
+                  </div>
+                ) : (
+                  <>
+                    {results.length > 0 ? (
+                      <div className="max-h-[400px] overflow-y-auto divide-y">
+                        {results.map((p) => <ProductCardMini key={p.id} product={p} />)}
+                        <button
+                          onClick={() => navigate(`/category?search=${encodeURIComponent(query.trim())}`)}
+                          className="w-full text-center py-2 text-cyan-600 font-semibold hover:bg-gray-50 transition"
+                        >
+                          Ver mais "{query}"
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="p-4 text-sm text-gray-500">Nenhum produto encontrado.</p>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
 
-          {/* Carrinho */}
-          <div className="relative flex items-center">
-            <button
-              id="cart-icon"
-              aria-label="Abrir carrinho"
-              onClick={() => setCartOpen(true)}
-              className="relative flex items-center justify-center"
-            >
-              <FiShoppingCart className="text-lg sm:text-xl md:text-2xl text-gray-700 hover:text-cyan-600 transition" />
-              {cartCount > 0 && (
-                <span
-                  className={`absolute -top-2 -right-2 bg-cyan-600 text-white min-w-[16px] h-4 px-[5px] flex items-center justify-center text-[10px] font-bold rounded-full shadow`}
-                >
-                  {cartCount > 99 ? "99+" : cartCount}
-                </span>
-              )}
+          {/* Ícones */}
+          <div className="flex items-center gap-5 flex-shrink-0">
+            <UserMenu />
+            <button onClick={() => setCartOpen(true)} className="relative text-gray-700 hover:text-[var(--first-color)]">
+              <ShoppingCart size={22} />
+              {cartCount > 0 && <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{cartCount}</span>}
             </button>
           </div>
-
-          {/* Mobile Menu Btn */}
-          <button
-            className="md:hidden text-2xl text-gray-700"
-            onClick={() => setMenuOpen(true)}
-          >
-            <FiMenu />
-          </button>
         </div>
-      </nav>
+      </div>
 
-      {/* Mobile Menu Overlay */}
-      {(menuOpen || closingMenu) && (
-        <div className="fixed inset-0 z-[250] flex">
-          {/* Overlay */}
+      {/* ===== Faixa azul ===== */}
+      <div className="bg-[var(--first-color)] text-white">
+        <div className="container mx-auto px-4 flex justify-center">
+          <ul className="hidden md:flex gap-10 font-semibold tracking-wide py-3">
+            <li><Link to="/" className="hover:text-[var(--light-color)]">Início</Link></li>
+            <li><Link to="/category" className="hover:text-[var(--light-color)]">Catálogo</Link></li>
+            <li><Link to={isLoggedIn ? "/dashboard" : "/login"} className="hover:text-[var(--light-color)]">Minha Conta</Link></li>
+            <li>
+              <Link to="/404" className="relative hover:text-[var(--light-color)]">
+                Receitas
+                <span className="absolute ml-1 z-0 text-[7px] uppercase font-medium px-1 py-[0.5px] rounded border border-[var(--first-color)] bg-white text-[var(--first-color)] opacity-80 group-hover:opacity-100 transition">
+                  beta
+                </span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/404" className="relative hover:text-[var(--light-color)]">
+                Cursos
+                <span className="absolute ml-1 z-0 text-[7px] uppercase font-medium px-1 py-[0.5px] rounded border border-[var(--first-color)] bg-white text-[var(--first-color)] opacity-80 group-hover:opacity-100 transition">
+                  beta
+                </span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/404" className="relative hover:text-[var(--light-color)]">
+                Lojinha
+                <span className="absolute ml-1 z-0 text-[7px] uppercase font-medium px-1 py-[0.5px] rounded border border-[var(--first-color)] bg-white text-[var(--first-color)] opacity-80 group-hover:opacity-100 transition">
+                  beta
+                </span>
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </div>
+      {/* ===== MENU MOBILE =====*/}
+      {(menuOpen || menuClosing) && (
+        <div className="fixed inset-0 z-[300] flex">
+          {/* Overlay sem blur */}
           <div
-            className={`absolute inset-0 bg-black/40 ${closingMenu ? "animate-fadeOut" : "animate-fadeIn"
+            className={`absolute inset-0 bg-black/40 ${menuClosing ? "animate-fadeOut" : "animate-fadeIn"
               }`}
             onClick={handleCloseMenu}
           />
-          {/* Drawer */}
-          <div
-            className={`ml-auto w-full h-full bg-white shadow-2xl p-6 ${closingMenu ? "animate-slideOut" : "animate-slideIn"
-              }`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-6">
-              <img
-                src="/assets/img/logo.svg"
-                alt="logo"
-                className="w-24 sm:w-32 md:w-36"
-              />
 
-              <button onClick={handleCloseMenu}>
-                <FiX className="text-2xl" />
+          {/* Drawer vindo da esquerda */}
+          <div
+            ref={menuRef}
+            className={`w-[80%] sm:w-[320px] h-full bg-white shadow-2xl flex flex-col
+        ${menuClosing ? "animate-slideOutLeft" : "animate-slideInLeft"}`}
+          >
+            {/* Logo + Fechar */}
+            <div className="p-6 border-b flex items-center justify-between">
+              <img src="/assets/img/logo.svg" alt="logo" className="h-12" />
+              <button
+                onClick={handleCloseMenu}
+                className="text-2xl text-gray-600 hover:text-cyan-600"
+              >
+                ✕
               </button>
             </div>
-            <ul className="flex flex-col gap-4 text-gray-800 font-medium">
-              <li><Link to="/" onClick={handleCloseMenu}>Inicio</Link></li>
-              <li><Link to="/category" onClick={handleCloseMenu}>Catálogo</Link></li>
-              <li>
+
+            {/* Links principais */}
+            <nav className="flex-1 overflow-y-auto px-6 py-4">
+              <ul className="flex flex-col gap-6 text-gray-800 font-medium">
+                <li>
+                  <Link to="/" onClick={handleCloseMenu}>
+                    Início
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/category" onClick={handleCloseMenu}>
+                    Catálogo
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to={isLoggedIn ? "/dashboard" : "/login"}
+                    onClick={handleCloseMenu}
+                  >
+                    Minha Conta
+                  </Link>
+                </li>
+
+                {/* Extras estilizados */}
+                <li>
+                  <Link to="/404" onClick={handleCloseMenu} className="flex items-center gap-1.5 group">
+                    Receitas
+                    <span className="text-[9px] uppercase font-semibold px-1.5 py-[1px] rounded-full border bg-[var(--first-color)] text-white tracking-wide opacity-80 group-hover:opacity-100 transition">
+                      beta
+                    </span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/404" onClick={handleCloseMenu} className="flex items-center gap-1.5 group">
+                    Cursos
+                    <span className="text-[9px] uppercase font-semibold px-1.5 py-[1px] rounded-full border bg-[var(--first-color)] text-white tracking-wide opacity-80 group-hover:opacity-100 transition">
+                      beta
+                    </span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/404" onClick={handleCloseMenu} className="flex items-center gap-1.5 group">
+                    Lojinha
+                    <span className="text-[9px] uppercase font-semibold px-1.5 py-[1px] rounded-full border bg-[var(--first-color)] text-white tracking-wide opacity-80 group-hover:opacity-100 transition">
+                      beta
+                    </span>
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+
+            {/* Rodapé dinâmico */}
+            <div className="border-t px-6 py-4">
+              {isLoggedIn ? (
                 <Link
-                  to={isLoggedIn ? "/dashboard" : "/login"}
+                  to="/dashboard"
                   onClick={handleCloseMenu}
+                  className="flex items-center gap-2 text-gray-700 hover:text-cyan-600 font-medium"
                 >
+                  <User size={20} />
                   Minha Conta
                 </Link>
-              </li>
-              <li><Link to="/login" onClick={handleCloseMenu}>Login</Link></li>
-            </ul>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={handleCloseMenu}
+                  className="flex items-center gap-2 text-gray-700 hover:text-cyan-600 font-medium"
+                >
+                  <User size={20} />
+                  Login / Cadastro
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== SEARCH MOBILE =====*/}
+      {(searchOpen || searchClosing) && (
+        <div className="fixed inset-0 z-[300] flex flex-col">
+          {/* Overlay com blur */}
+          <div
+            className={`absolute inset-0 bg-black/40 backdrop-blur-sm ${searchClosing ? "animate-fadeOut" : "animate-fadeIn"
+              }`}
+            onClick={handleCloseSearch}
+          />
+          <div
+            ref={searchRef}
+            className={`relative w-full bg-white shadow-2xl flex flex-col z-[310]
+    ${searchClosing ? "animate-slideUp" : "animate-slideDown"}`}
+          >
+            <div className="flex items-center px-4 py-3 gap-2">
+              <input
+                type="text"
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar produtos..."
+                className="w-full h-11 px-4 rounded-full border border-gray-200 focus:ring-2 focus:ring-[var(--first-color)] outline-none"
+              />
+              <button onClick={handleCloseSearch} className="text-gray-600 hover:text-[var(--first-color)]">
+                <ChevronUp size={24} />
+              </button>
+            </div>
+
+            {/* Só aparece o bloco branco quando tem query */}
+            {query.length >= 3 && (
+              <div className="flex-1 overflow-y-auto divide-y bg-white">
+                {loading ? (
+                  <div className="p-4 flex items-center gap-3">
+                    <div className="h-5 w-5 rounded-full border-2 border-gray-300 border-t-transparent animate-spin" />
+                    <span className="text-sm text-gray-500">Procurando...</span>
+                  </div>
+                ) : (
+                  <>
+                    {results.length > 0 ? (
+                      <>
+                        {results.map((p) => <ProductCardMini key={p.id} product={p} />)}
+                        <button
+                          onClick={() => {
+                            handleCloseSearch();
+                            navigate(`/category?search=${encodeURIComponent(query.trim())}`);
+                          }}
+                          className="w-full text-center py-2 text-cyan-600 font-semibold hover:bg-gray-50"
+                        >
+                          Ver mais "{query}"
+                        </button>
+                      </>
+                    ) : (
+                      <p className="p-4 text-sm text-gray-500">Nenhum produto encontrado.</p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

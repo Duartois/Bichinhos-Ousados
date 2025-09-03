@@ -2,8 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+
 
 const Login = () => {
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,24 +26,28 @@ const Login = () => {
       });
 
       if (res.data && res.data.email) {
-        // salva no sessionStorage
-        sessionStorage.setItem("user", JSON.stringify(res.data));
-        navigate("/dashboard"); // ou redireciona para / se preferir
+        // Atualiza o contexto e o sessionStorage ao mesmo tempo
+        login(res.data);
+
+        // Redirecionamento centralizado
+        if (res.data.seller) {
+          navigate("/dashboard");   // adm/seller
+        } else {
+          navigate("/account");     // cliente
+        }
       } else {
         setError(res.data.alert || "Erro desconhecido.");
       }
     } catch (err) {
-      setError(
-        err.response?.data?.alert || "Falha ao conectar com o servidor."
-      );
+      setError(err.response?.data?.alert || "Falha ao conectar com o servidor.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-[1400px] w-full md:h-[700px] bg-white shadow-lg rounded-2xl overflow-hidden grid md:grid-cols-2">
+    <section className="section min-h-screen px-4 flex items-center justify-center bg-gray-300 px-4">
+      <div className="bg-white max-w-7xl h-[500px] shadow-lg rounded-2xl overflow-hidden grid md:grid-cols-2">
         {/* Imagem lateral */}
         <div className="hidden md:block">
           <img

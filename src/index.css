@@ -1,12 +1,11 @@
 @import "tailwindcss";
 
-.first-color {
-  @apply bg-cyan-600;
+:root {
+  --first-color: #afdcec;        /* azul primário */
+  --first-color-alt: #cae2eb;    /* azul hover/alternativo */
+  --light-color: #f8fafc;        /* fundo claro */
+  --dark-color: #1e293b;         /* texto escuro */
 }
-.text-first-color {
-  @apply text-cyan-600;
-}
-
 /* ========= HEADER / NAV ========= */
 .header__top {
   @apply bg-gray-100;
@@ -640,6 +639,7 @@
   animation: fadeOut 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+/* 🔹 Base (carrinho: direita) */
 @keyframes slideIn {
   from { transform: translateX(100%); opacity: 0.8; }
   to { transform: translateX(0); opacity: 1; }
@@ -653,6 +653,38 @@
 }
 .animate-slideOut {
   animation: slideOut 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 🔹 Menu (esquerda → direita) */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); opacity: 0.8; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes slideOutLeft {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(-100%); opacity: 0.8; }
+}
+.animate-slideInLeft {
+  animation: slideInLeft 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.animate-slideOutLeft {
+  animation: slideOutLeft 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 🔹 Search (cima → baixo) */
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0.8; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-100%); opacity: 0.8; }
+}
+.animate-slideDown {
+  animation: slideDown 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.animate-slideUp {
+  animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Showcase hover */
