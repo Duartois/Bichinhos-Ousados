@@ -45,9 +45,20 @@ export const CartProvider = ({ children }) => {
     0
   );
 
+  // 🔹 Novo: conta todas as quantidades
+  const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
   return (
     <CartContext.Provider
-      value={{ cartItems, addToCart, updateQuantity, removeFromCart, clearCart, cartTotal }}
+      value={{
+        cartItems,
+        addToCart,
+        updateQuantity,
+        removeFromCart,
+        clearCart,
+        cartTotal,
+        cartCount, // 🔹 exportado pro Header
+      }}
     >
       {children}
     </CartContext.Provider>

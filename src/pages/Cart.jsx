@@ -1,124 +1,141 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCart } from "../context/CartContext";
 import { Link } from "react-router-dom";
+import { FiTrash2, FiX } from "react-icons/fi";
 
 const Cart = ({ cartOpen, setCartOpen }) => {
-  const { cartItems, updateQuantity, removeFromCart, cartTotal, clearCart } =
-    useCart();
+  const { cartItems, updateQuantity, removeFromCart, cartTotal, clearCart } = useCart();
   const cartRef = useRef(null);
 
-  // Fecha o carrinho ao clicar fora
+  // 🔹 estado para controlar a animação de saída
+  const [closing, setClosing] = useState(false);
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (cartRef.current && !cartRef.current.contains(e.target)) {
-        setCartOpen(false);
+        handleClose();
       }
     };
-
     if (cartOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [cartOpen, setCartOpen]);
+  }, [cartOpen]);
 
-  if (!cartOpen) return null; // Não renderiza se fechado
+  // 🔹 Função que dispara a animação de saída
+  const handleClose = () => {
+    setClosing(true);
+    setTimeout(() => {
+      setClosing(false);
+      setCartOpen(false);
+    }, 350); // mesmo tempo da animação CSS
+  };
+
+  // 🔹 Renderiza enquanto estiver aberto OU em processo de fechamento
+  if (!cartOpen && !closing) return null;
 
   return (
-    <aside
-      ref={cartRef}
-      className={`cart ${cartOpen ? "active" : ""}`}
-      aria-hidden={!cartOpen}
-    >
-      <div className="flex justify-between items-center border-b pb-2 mb-4">
-        <h2 className="text-lg font-semibold text-[var(--first-color)]">
-          Seu Carrinho
-        </h2>
-        <button
-          id="close-cart"
-          aria-label="Fechar carrinho"
-          onClick={() => setCartOpen(false)}
-        >
-          ✕
-        </button>
-      </div>
+    <div className="fixed inset-0 z-[300] flex">
+      {/* Overlay */}
+      <div
+        className={`absolute inset-0 bg-black/40 backdrop-blur-sm ${
+          closing ? "animate-fadeOut" : "animate-fadeIn"
+        }`}
+        onClick={handleClose}
+      />
 
-      {cartItems.length === 0 ? (
-        <p className="text-gray-500 text-center">Seu carrinho está vazio.</p>
-      ) : (
-        <>
-          <div className="table__container mb-4">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Imagem</th>
-                  <th>Produto</th>
-                  <th>Preço</th>
-                  <th>Qtd</th>
-                  <th>Ação</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cartItems.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <img
-                        src={item.productImg}
-                        alt={item.title}
-                        className="table__img"
-                      />
-                    </td>
-                    <td className="font-medium">{item.title}</td>
-                    <td>R${item.price.toFixed(2)}</td>
-                    <td>
-                      <input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) =>
-                          updateQuantity(item.id, parseInt(e.target.value))
-                        }
-                        className="cart-quantity"
-                      />
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="cart-remove"
-                      >
-                        🗑
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* Drawer */}
+      <div
+        ref={cartRef}
+        className={`ml-auto w-full sm:w-[400px] h-full bg-white shadow-2xl flex flex-col ${
+          closing ? "animate-slideOut" : "animate-slideIn"
+        }`}
+      >
+        {/* Header */}
+        <div className="flex justify-between items-center border-b p-4">
+          <h2 className="text-lg font-semibold text-cyan-600">Seu Carrinho</h2>
+          <button onClick={handleClose} aria-label="Fechar">
+            <FiX className="text-2xl text-gray-600 hover:text-cyan-600" />
+          </button>
+        </div>
 
-          <div className="flex justify-between items-center border-t pt-3">
-            <p className="font-semibold text-[var(--first-color)]">
-              Total: R${cartTotal.toFixed(2)}
+        {/* Itens */}
+        <div className="flex-1 overflow-y-auto divide-y">
+          {cartItems.length === 0 ? (
+            <p className="text-gray-500 text-center py-10">
+              Seu carrinho está vazio.
             </p>
-            <div className="flex gap-2">
+          ) : (
+            cartItems.map((item) => (
+              <div key={item.id} className="flex items-center gap-4 py-3 px-4">
+                {/* Imagem clicável */}
+                <Link
+                  to={`/product/${item.id}`}
+                  onClick={handleClose}
+                  className="shrink-0"
+                >
+                  <img
+                    src={item.productImg}
+                    alt={item.title}
+                    className="w-16 h-16 object-contain rounded border hover:scale-105 transition-transform"
+                  />
+                </Link>
+                <div className="flex-1">
+                  <Link
+                    to={`/product/${item.id}`}
+                    onClick={handleClose}
+                    className="font-medium text-gray-800 hover:text-cyan-600 transition block"
+                  >
+                    {item.title}
+                  </Link>
+                  <p className="text-sm text-cyan-600">
+                    R${Number(item.price).toFixed(2)}
+                  </p>
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                    className="w-16 mt-1 border rounded text-center text-sm"
+                  />
+                </div>
+                <button
+                  onClick={() => removeFromCart(item.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <FiTrash2 className="text-lg" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer */}
+        {cartItems.length > 0 && (
+          <div className="border-t p-4">
+            <div className="flex justify-between items-center mb-4">
+              <p className="font-semibold text-cyan-600">
+                Total: R${Number(cartTotal).toFixed(2)}
+              </p>
               <button
                 onClick={clearCart}
-                className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                className="text-sm text-gray-500 hover:text-red-500"
               >
                 Limpar
               </button>
-              <Link
-                to="/checkout"
-                className="px-3 py-2 bg-[var(--first-color)] text-white rounded hover:opacity-90"
-                onClick={() => setCartOpen(false)}
-              >
-                Finalizar
-              </Link>
             </div>
+            <Link
+              to="/checkout"
+              onClick={handleClose}
+              className="block w-full bg-cyan-600 text-white text-center py-3 rounded-lg hover:bg-cyan-700 transition"
+            >
+              Finalizar Compra
+            </Link>
           </div>
-        </>
-      )}
-    </aside>
+        )}
+      </div>
+    </div>
   );
 };
 
 export default Cart;
-

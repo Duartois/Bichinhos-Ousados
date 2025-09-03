@@ -64,7 +64,7 @@ const Footer = () => {
       </div>
 
       <div className="footer__bottom">
-        <p className="copyright">&copy; 2023 Evera. All rights reserved</p>
+        <p className="copyright">&copy; 2025 Matheus Duarte. All rights reserved</p>
         <span className="designer">Designed by Matheus Duarte</span>
       </div>
     </footer>
