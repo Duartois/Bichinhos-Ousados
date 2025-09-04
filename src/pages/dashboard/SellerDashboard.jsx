@@ -2,23 +2,22 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { PlusCircle, Search, Package, ShoppingCart, Settings, PackageX, LogOut } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Pencil, Trash2 } from "lucide-react";
 
 const SellerDashboard = () => {
-    const { user } = useAuth();  // ✅ dentro do componente
+    const { user, logout } = useAuth();
     const [products, setProducts] = useState([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const productsPerPage = 15;
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (!user) {
-            navigate("/login");
-            return;
-        }
-        if (!user.seller) {
-            navigate("/account");
-            return;
-        }
+        if (!user) return navigate("/login");
+        if (!user.seller) return navigate("/account");
 
         const fetchProducts = async () => {
             try {
@@ -30,7 +29,6 @@ const SellerDashboard = () => {
                 setLoading(false);
             }
         };
-
         fetchProducts();
     }, [user, navigate]);
 
@@ -41,59 +39,216 @@ const SellerDashboard = () => {
             p.brand?.toLowerCase().includes(search.toLowerCase())
     );
 
+    const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+    const startIndex = (currentPage - 1) * productsPerPage;
+    const paginatedProducts = filteredProducts.slice(startIndex, startIndex + productsPerPage);
+    const handlePageChange = (page) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+            window.scrollTo({ top: 0, behavior: "smooth" }); // opcional: rolar para o topo
+        }
+    };
     return (
-        <div className="container mx-auto py-12 px-4">
-            <h1 className="text-2xl font-bold mb-4">
-                Bem-vindo(a), {user?.name || "Vendedor"}
-            </h1>
-
-            <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
-                <input
-                    type="text"
-                    placeholder="Buscar produto por nome, categoria ou marca..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="border px-4 py-2 rounded w-full md:w-1/2"
-                />
+        <div className="flex min-h-screen bg-gray-50">
+            {/* Sidebar desktop */}
+            <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 p-6 flex-col">
+                <h2 className="font-display text-2xl font-bold text-gray-900 mb-8">Painel</h2>
+                <nav className="flex flex-col gap-4 text-gray-700 font-medium flex-1">
+                    <button className="flex items-center gap-2 hover:text-cyan-600 transition">
+                        <Package size={18} /> Produtos
+                    </button>
+                    <button className="flex items-center gap-2 hover:text-cyan-600 transition">
+                        <ShoppingCart size={18} /> Pedidos
+                    </button>
+                    <button className="flex items-center gap-2 hover:text-cyan-600 transition">
+                        <Settings size={18} /> Configurações
+                    </button>
+                </nav>
                 <button
-                    onClick={() => navigate("/add-product")}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded shadow"
+                    onClick={() => {
+                        logout();
+                        navigate("/login");
+                    }}
+                    className="mt-6 flex items-center gap-2 text-red-600 hover:text-red-700 font-medium"
                 >
-                    Adicionar Produto
+                    <LogOut size={18} /> Sair
                 </button>
-            </div>
+            </aside>
 
-            {loading ? (
-                <p>Carregando...</p>
-            ) : filteredProducts.length ? (
-                <div className="grid md:grid-cols-3 gap-6">
-                    {filteredProducts.map((product) => (
-                        <div
-                            key={product.id}
-                            className="border rounded shadow-sm p-4 hover:shadow-md transition"
-                        >
-                            <img
-                                src={product.image}
-                                alt={product.name}
-                                className="h-40 w-full object-cover rounded mb-2"
-                            />
-                            <h2 className="font-semibold">{product.name}</h2>
-                            <p className="text-sm text-gray-500">{product.category}</p>
-                            <p className="text-lg font-bold">R${product.price}</p>
-                            <div className="flex gap-2 mt-2 text-sm">
-                                <button className="px-2 py-1 border rounded hover:bg-gray-100">
-                                    Editar
+            {/* Conteúdo principal */}
+            <motion.main
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex-1 p-4 sm:p-6 md:p-10 w-full max-w-full overflow-x-hidden"
+            >
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8 gap-4">
+                    <h1 className="font-display text-2xl sm:text-3xl md:text-5xl text-center font-extrabold text-[var(--dark-color)]">
+                        Meus Produtos
+                    </h1>
+                    <button
+                        onClick={() => navigate("/add-product")}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[var(--first-color)] hover:bg-[var(--first-color-alt)] text-[var(--dark-color)] px-4 sm:px-6 py-2 sm:py-3 rounded-xl shadow font-medium transition"
+                    >
+                        <PlusCircle size={20} /> Novo Produto
+                    </button>
+                </div>
+
+                {/* Busca */}
+                <div className="relative w-full sm:w-2/3 md:w-1/2 mb-6">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Buscar por nome, categoria ou marca..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-12 pr-4 py-3 w-full border border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-cyan-300 outline-none text-gray-700"
+                    />
+                </div>
+
+                {/* Loading */}
+                {loading && <p className="text-gray-500">Carregando produtos...</p>}
+
+                {/* Lista */}
+                {!loading && paginatedProducts.length > 0 ? (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8">
+                            <AnimatePresence>
+                                {paginatedProducts.map((product) => (
+                                    <motion.div
+                                        key={product.id}
+                                        className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition overflow-hidden flex flex-col border border-[var(--first-color-alt)]"
+                                    >
+                                        <div className="relative w-full h-60 md:h-48 overflow-hidden">
+                                            <img
+                                                src={product.image}
+                                                alt={product.name}
+                                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                                            />
+                                        </div>
+                                        <div className="flex-1 p-5 flex flex-col justify-between">
+                                            <div>
+                                                <h2 className="font-display text-lg sm:text-xl font-semibold text-[var(--dark-color)] truncate">
+                                                    {product.name}
+                                                </h2>
+                                                <p className="text-xs uppercase tracking-wide text-gray-500 mt-1">
+                                                    {product.category}
+                                                </p>
+                                                <p className="font-display text-lg sm:text-xl font-bold text-[var(--first-color)] mt-3">
+                                                    R${product.price}
+                                                </p>
+                                            </div>
+                                            <div className="flex gap-3 mt-5">
+                                                <button
+                                                    onClick={() => navigate(`/add-product?id=${product.id}`)}
+                                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-[var(--first-color-alt)] transition"
+                                                >
+                                                    <Pencil size={16} /> Editar
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (confirm("Tem certeza que deseja excluir este produto?")) {
+                                                            await api.post("/delete-product", { id: product.id });
+                                                            setProducts(products.filter((p) => p.id !== product.id));
+                                                        }
+                                                    }}
+                                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                                                >
+                                                    <Trash2 size={16} /> Excluir
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
+                        {/* Paginação refinada */}
+                        {totalPages > 1 && (
+                            <div className="flex flex-wrap justify-center items-center gap-2 mt-10">
+                                <button
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-cyan-100 hover:text-cyan-700 disabled:opacity-40 transition-all duration-300"
+                                >
+                                    ←
                                 </button>
-                                <button className="px-2 py-1 border rounded hover:bg-gray-100 text-red-500">
-                                    Excluir
+
+                                {Array.from({ length: totalPages }).map((_, index) => {
+                                    const page = index + 1;
+
+                                    if (page <= 3 || page === totalPages) {
+                                        return (
+                                            <button
+                                                key={page}
+                                                onClick={() => handlePageChange(page)}
+                                                className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-300 ${currentPage === page
+                                                    ? "bg-cyan-600 text-white shadow-lg hover:bg-cyan-700"
+                                                    : "bg-gray-100 text-gray-600 hover:bg-cyan-100 hover:text-cyan-700"
+                                                    }`}
+                                            >
+                                                {page}
+                                            </button>
+                                        );
+                                    }
+
+                                    if (
+                                        page >= currentPage - 1 &&
+                                        page <= currentPage + 1 &&
+                                        page < totalPages
+                                    ) {
+                                        return (
+                                            <button
+                                                key={page}
+                                                onClick={() => handlePageChange(page)}
+                                                className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-300 ${currentPage === page
+                                                    ? "bg-cyan-600 text-white shadow-lg hover:bg-cyan-700"
+                                                    : "bg-gray-100 text-gray-600 hover:bg-cyan-100 hover:text-cyan-700"
+                                                    }`}
+                                            >
+                                                {page}
+                                            </button>
+                                        );
+                                    }
+
+                                    if (
+                                        (page === 4 && currentPage > 4) ||
+                                        (page === totalPages - 1 && currentPage < totalPages - 2)
+                                    ) {
+                                        return (
+                                            <span key={page} className="px-2 text-gray-400">
+                                                ...
+                                            </span>
+                                        );
+                                    }
+
+                                    return null;
+                                })}
+
+                                <button
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-cyan-100 hover:text-cyan-700 disabled:opacity-40 transition-all duration-300"
+                                >
+                                    →
                                 </button>
                             </div>
+                        )}
+                    </>
+                ) : (
+                    !loading && (
+                        <div className="text-center text-gray-500 mt-20">
+                            <PackageX className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                            <p className="text-lg">Nenhum produto encontrado.</p>
+                            <button
+                                onClick={() => navigate("/add-product")}
+                                className="mt-6 bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-xl shadow-md font-medium transition"
+                            >
+                                Adicionar Produto
+                            </button>
                         </div>
-                    ))}
-                </div>
-            ) : (
-                <p>Nenhum produto encontrado.</p>
-            )}
+                    )
+                )}
+            </motion.main>
         </div>
     );
 };

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, User, Search, ChevronUp } from "lucide-react";
+import { useLocation, Link, useNavigate } from "react-router-dom";
+import { Package, Settings, LogOut, ShoppingCart, User, Search, ChevronUp } from "lucide-react";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 import Cart from "../pages/Cart";
 import ProductCardMini from "../components/ProductCardMini";
 import api from "../services/api";
@@ -20,20 +21,19 @@ const Header = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchClosing, setSearchClosing] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(false);
-
   const { cartCount } = useCart();
   const isLoggedIn = !!sessionStorage.getItem("user");
-
   const menuRef = useRef(null);
   const searchRef = useRef(null);
   const desktopSearchRef = useRef(null);
-
+  const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const isDashboard = location.pathname.startsWith("/dashboard");
 
   const handleCloseMenu = () => {
     setMenuClosing(true);
@@ -116,7 +116,7 @@ const Header = () => {
 
           {/* Logo */}
           <Link to="/" className="flex-shrink-0">
-            <img  />
+            <img />
           </Link>
 
           {/* Search desktop */}
@@ -226,10 +226,11 @@ const Header = () => {
           />
 
           {/* Drawer vindo da esquerda */}
+          {/* Drawer vindo da esquerda */}
           <div
             ref={menuRef}
             className={`w-[80%] sm:w-[320px] h-full bg-white shadow-2xl flex flex-col
-        ${menuClosing ? "animate-slideOutLeft" : "animate-slideInLeft"}`}
+  ${menuClosing ? "animate-slideOutLeft" : "animate-slideInLeft"}`}
           >
             {/* Logo + Fechar */}
             <div className="p-6 border-b flex items-center justify-between">
@@ -245,73 +246,87 @@ const Header = () => {
             {/* Links principais */}
             <nav className="flex-1 overflow-y-auto px-6 py-4">
               <ul className="flex flex-col gap-6 text-gray-800 font-medium">
-                <li>
-                  <Link to="/" onClick={handleCloseMenu}>
-                    Início
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/category" onClick={handleCloseMenu}>
-                    Catálogo
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to={isLoggedIn ? "/dashboard" : "/login"}
-                    onClick={handleCloseMenu}
-                  >
-                    Minha Conta
-                  </Link>
-                </li>
-
-                {/* Extras estilizados */}
-                <li>
-                  <Link to="/404" onClick={handleCloseMenu} className="flex items-center gap-1.5 group">
-                    Receitas
-                    <span className="text-[9px] uppercase font-semibold px-1.5 py-[1px] rounded-full border bg-[var(--first-color)] text-white tracking-wide opacity-80 group-hover:opacity-100 transition">
-                      beta
-                    </span>
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/404" onClick={handleCloseMenu} className="flex items-center gap-1.5 group">
-                    Cursos
-                    <span className="text-[9px] uppercase font-semibold px-1.5 py-[1px] rounded-full border bg-[var(--first-color)] text-white tracking-wide opacity-80 group-hover:opacity-100 transition">
-                      beta
-                    </span>
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/404" onClick={handleCloseMenu} className="flex items-center gap-1.5 group">
-                    Lojinha
-                    <span className="text-[9px] uppercase font-semibold px-1.5 py-[1px] rounded-full border bg-[var(--first-color)] text-white tracking-wide opacity-80 group-hover:opacity-100 transition">
-                      beta
-                    </span>
-                  </Link>
-                </li>
+                {isDashboard ? (
+                  <>
+                    <li>
+                      <Link to="/dashboard" onClick={handleCloseMenu} className="flex items-center gap-2">
+                        <Package size={18} /> Produtos
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/dashboard/orders" onClick={handleCloseMenu} className="flex items-center gap-2">
+                        <ShoppingCart size={18} /> Pedidos
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/dashboard/settings" onClick={handleCloseMenu} className="flex items-center gap-2">
+                        <Settings size={18} /> Configurações
+                      </Link>
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li><Link to="/" onClick={handleCloseMenu}>Início</Link></li>
+                    <li><Link to="/category" onClick={handleCloseMenu}>Catálogo</Link></li>
+                    <li>
+                      <Link to={isLoggedIn ? "/dashboard" : "/login"} onClick={handleCloseMenu}>
+                        Minha Conta
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/404" onClick={handleCloseMenu} className="flex items-center gap-1.5 group">
+                        Receitas
+                        <span className="text-[9px] uppercase font-semibold px-1.5 py-[1px] rounded-full border bg-[var(--first-color)] text-white opacity-80">beta</span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/404" onClick={handleCloseMenu} className="flex items-center gap-1.5 group">
+                        Cursos
+                        <span className="text-[9px] uppercase font-semibold px-1.5 py-[1px] rounded-full border bg-[var(--first-color)] text-white opacity-80">beta</span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/404" onClick={handleCloseMenu} className="flex items-center gap-1.5 group">
+                        Lojinha
+                        <span className="text-[9px] uppercase font-semibold px-1.5 py-[1px] rounded-full border bg-[var(--first-color)] text-white opacity-80">beta</span>
+                      </Link>
+                    </li>
+                  </>
+                )}
               </ul>
             </nav>
 
             {/* Rodapé dinâmico */}
             <div className="border-t px-6 py-4">
-              {isLoggedIn ? (
-                <Link
-                  to="/dashboard"
-                  onClick={handleCloseMenu}
-                  className="flex items-center gap-2 text-gray-700 hover:text-cyan-600 font-medium"
+              {isDashboard ? (
+                <button
+                  onClick={() => {
+                    logout();
+                    handleCloseMenu();
+                    navigate("/login");
+                  }}
+                  className="flex items-center gap-2 text-red-600 hover:text-red-700 font-medium"
                 >
-                  <User size={20} />
-                  Minha Conta
-                </Link>
+                  <LogOut size={20} /> Sair
+                </button>
               ) : (
-                <Link
-                  to="/login"
-                  onClick={handleCloseMenu}
-                  className="flex items-center gap-2 text-gray-700 hover:text-cyan-600 font-medium"
-                >
-                  <User size={20} />
-                  Login / Cadastro
-                </Link>
+                isLoggedIn ? (
+                  <Link
+                    to="/dashboard"
+                    onClick={handleCloseMenu}
+                    className="flex items-center gap-2 text-gray-700 hover:text-cyan-600 font-medium"
+                  >
+                    <User size={20} /> Minha Conta
+                  </Link>
+                ) : (
+                  <Link
+                    to="/login"
+                    onClick={handleCloseMenu}
+                    className="flex items-center gap-2 text-gray-700 hover:text-cyan-600 font-medium"
+                  >
+                    <User size={20} /> Login / Cadastro
+                  </Link>
+                )
               )}
             </div>
           </div>

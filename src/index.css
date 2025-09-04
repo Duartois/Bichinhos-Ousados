@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
+
 :root {
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap");
+
   --first-color: #afdcec;        /* azul primário */
   --first-color-alt: #cae2eb;    /* azul hover/alternativo */
   --light-color: #f8fafc;        /* fundo claro */
@@ -718,4 +721,10 @@
 }
 .newsletter__btn {
   @apply bg-cyan-600 text-white px-6 h-12 rounded sm:rounded-r text-sm hover:bg-cyan-700 transition;
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--first-color);
+  box-shadow: 0 0 0 2px var(--first-color-alt);
 }
