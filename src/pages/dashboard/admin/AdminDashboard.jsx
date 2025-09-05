@@ -68,9 +68,13 @@ const AdminDashboard = () => {
                     <button className="flex items-center gap-2 hover:text-cyan-600 transition">
                         <Package size={18} /> Produtos
                     </button>
-                    <button className="flex items-center gap-2 hover:text-cyan-600 transition">
+                    <button
+                        onClick={() => navigate("/admin/orders")}
+                        className="flex items-center gap-2 hover:text-cyan-600 transition"
+                    >
                         <ShoppingCart size={18} /> Pedidos
                     </button>
+                    {/* TODO: adicionar navegação para configurações quando a rota existir */}
                     <button className="flex items-center gap-2 hover:text-cyan-600 transition">
                         <Settings size={18} /> Configurações
                     </button>
