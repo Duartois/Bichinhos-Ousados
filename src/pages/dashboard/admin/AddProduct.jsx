@@ -1,11 +1,11 @@
-// src/pages/dashboard/AddProduct.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, Save, ImagePlus, CheckCircle, Scissors } from "lucide-react";
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
+import { Plus, Trash2, ArrowLeft, Save, ImagePlus, CheckCircle, Scissors, Pencil } from "lucide-react";
+import api from "../../../services/api";
+import { useAuth } from "../../../context/AuthContext";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
+import { useNotification } from "../../../context/NotificationContext";
 
 const MAX_IMAGES = 8;
 
@@ -33,11 +33,15 @@ export default function AddProduct() {
   const [searchParams] = useSearchParams();
   const { id: idFromPath } = useParams();
   const id = useMemo(() => searchParams.get("id") || idFromPath || null, [searchParams, idFromPath]);
+
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef(null);
+  const { showNotification } = useNotification();
+
   const [cropSrc, setCropSrc] = useState(null);
   const cropperRef = useRef(null);
+
   const [form, setForm] = useState({
     name: "",
     category: "",
@@ -53,25 +57,61 @@ export default function AddProduct() {
   const [images, setImages] = useState([]);
   const hasUser = !!user?.email;
 
+  // estados cropper
+  const [originalImage, setOriginalImage] = useState(null);
+  const [lastCropData, setLastCropData] = useState(null);
+
+  // --- Funções de cropper
+  const openCropper = () => {
+    if (!images[0]) return;
+    if (!originalImage) {
+      setOriginalImage(images[0]);
+    }
+    const src =
+      typeof (originalImage || images[0]) === "string"
+        ? (originalImage || images[0])
+        : URL.createObjectURL(originalImage || images[0]);
+    setCropSrc(src);
+  };
+
   const onConfirmCrop = () => {
     const cropper = cropperRef.current?.cropper;
     if (!cropper) return;
     const canvas = cropper.getCroppedCanvas({ width: 800, height: 800 });
     if (!canvas) return;
+
+    setLastCropData(cropper.getData());
+
     canvas.toBlob((blob) => {
       if (blob) {
         const file = new File([blob], `cropped-${Date.now()}.jpeg`, { type: "image/jpeg" });
-        setImages((imgs) => [file, ...imgs.slice(1)]);
+        setImages((imgs) => {
+          const copy = [...imgs];
+          copy[0] = file;
+          return copy;
+        });
         setCropSrc(null);
       }
     }, "image/jpeg");
   };
 
+  const resetToOriginal = () => {
+    if (!originalImage) return;
+    setImages((imgs) => {
+      const copy = [...imgs];
+      copy[0] = originalImage;
+      return copy;
+    });
+    setLastCropData(null);
+    setCropSrc(null);
+  };
+
+  // --- Fetch produto (edição)
   useEffect(() => {
     if (!id) return;
     (async () => {
       try {
-        const { data } = await api.get(`/product-data?id=${encodeURIComponent(id)}`);
+        const { data } = await api.get(`/api/product-data?id=${encodeURIComponent(id)}`);
         setForm({
           name: data.name || "",
           category: data.category || "",
@@ -84,24 +124,22 @@ export default function AddProduct() {
           tags: Array.isArray(data.tags) ? data.tags.join(", ") : (data.tags || ""),
         });
 
-        const arr = [];
-        if (data.image) arr.push(data.image);
-        if (Array.isArray(data.images)) {
-          data.images.forEach((u) => {
-            if (u && !arr.includes(u)) arr.push(u);
-          });
+        const arr = Array.isArray(data.images) ? [...data.images] : [];
+        if (data.image && (!arr.length || arr[0] !== data.image)) {
+          arr.unshift(data.image);
         }
         setImages(arr.slice(0, MAX_IMAGES));
       } catch (e) {
         console.error("Erro ao buscar produto:", e);
-        alert("Não foi possível carregar o produto para edição.");
-        navigate("/dashboard");
+        showNotification("Não foi possível carregar o produto para edição.", "error");
+        navigate("/admin");
       } finally {
         setLoading(false);
       }
     })();
-  }, [id, navigate]);
+  }, [id, navigate, showNotification]);
 
+  // --- Inputs
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
@@ -137,6 +175,7 @@ export default function AddProduct() {
     });
   };
 
+  // --- Validação
   function validateForPublish(data) {
     if (!data.name) return "Nome é obrigatório";
     if (!data.category) return "Categoria é obrigatória";
@@ -147,7 +186,7 @@ export default function AddProduct() {
 
   async function handleSubmit(draft = false) {
     if (!hasUser) {
-      alert("Sua sessão expirou. Faça login novamente.");
+      showNotification("Sua sessão expirou. Faça login novamente.", "error");
       navigate("/login");
       return;
     }
@@ -175,12 +214,15 @@ export default function AddProduct() {
       images: [],
     };
 
-    if (!draft) {
-      const err = validateForPublish(payload);
-      if (err) return alert(err);
+    // Sempre valida, seja rascunho ou publicação
+    const err = validateForPublish(payload);
+    if (err) {
+      showNotification(err, "error");
+      return;
     }
+
     if (payload.savePrice && !payload.oldPrice) {
-      return alert("Se informar desconto (savePrice), informe também o preço antigo (oldPrice).");
+      return showNotification("Se informar desconto (savePrice), informe também o preço antigo (oldPrice).", "warning");
     }
 
     setSaving(true);
@@ -190,9 +232,10 @@ export default function AddProduct() {
         if (typeof item === "string") {
           uploaded.push(item);
         } else {
-          const extFromType = (item.type || "").split("/")[1] || "jpeg";
-          const fileType = `image/${extFromType === "jpg" ? "jpeg" : extFromType}`;
-          const { data } = await api.get(`/s3url?fileType=${encodeURIComponent(fileType)}`);
+          let fileType = "image/jpeg";
+          if (item.type === "image/png") fileType = "image/png";
+
+          const { data } = await api.get(`/api/s3url?fileType=${encodeURIComponent(fileType)}`);
           const putUrl = data?.url;
           if (!putUrl) throw new Error("URL S3 não retornada");
 
@@ -201,7 +244,12 @@ export default function AddProduct() {
             headers: { "Content-Type": fileType },
             body: item,
           });
-          if (!put.ok) throw new Error("Falha no upload S3");
+
+          if (!put.ok) {
+            const text = await put.text();
+            console.error("Falha upload:", put.status, text);
+            throw new Error("Falha no upload S3");
+          }
 
           uploaded.push(putUrl.split("?")[0]);
         }
@@ -211,16 +259,16 @@ export default function AddProduct() {
 
       if (id) payload.id = id;
 
-      const res = await api.post("/add-product", payload);
+      const res = await api.post("/api/add-product", payload);
       if (res.data?.success) {
-        alert("Produto salvo com sucesso!");
-        navigate("/dashboard");
+        showNotification("Produto salvo com sucesso!", "success");
+        navigate("/admin");
       } else {
-        alert(res.data?.alert || "Falha ao salvar produto.");
+        showNotification(res.data?.alert || "Falha ao salvar produto.", "error");
       }
     } catch (e) {
       console.error(e);
-      alert("Erro ao salvar. Verifique as imagens e tente novamente.");
+      showNotification("Erro ao salvar. Verifique as imagens e tente novamente.", "error");
     } finally {
       setSaving(false);
     }
@@ -279,9 +327,7 @@ export default function AddProduct() {
             <div className="absolute top-2 left-2 flex gap-2">
               {images.length > 0 && (
                 <button
-                  onClick={() =>
-                    setCropSrc(typeof images[0] === "string" ? images[0] : URL.createObjectURL(images[0]))
-                  }
+                  onClick={openCropper}
                   className="px-3 py-1.5 text-sm rounded-md bg-white/90 border hover:bg-white"
                 >
                   <Scissors size={16} />
@@ -303,34 +349,56 @@ export default function AddProduct() {
             {cropSrc && (
               <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
                 <div className="bg-white p-4 rounded-lg max-w-lg w-full">
-                  <Cropper src={cropSrc} ref={cropperRef} aspectRatio={1} viewMode={1} />
-                  <div className="flex justify-end gap-3 mt-4">
-                    <button onClick={() => setCropSrc(null)} className="px-3 py-1 border rounded">
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={onConfirmCrop}
-                      className="px-3 py-1 bg-[var(--first-color)] text-white rounded"
-                    >
-                      Confirmar
-                    </button>
+                  <Cropper
+                    src={cropSrc}
+                    ref={cropperRef}
+                    aspectRatio={1}
+                    viewMode={1}
+                    ready={() => {
+                      if (lastCropData) cropperRef.current?.cropper.setData(lastCropData);
+                    }}
+                  />
+
+                  <div className="flex justify-between gap-3 mt-4">
+                    {originalImage && (
+                      <button
+                        onClick={resetToOriginal}
+                        className="px-3 py-1 border rounded text-red-600 hover:bg-red-50"
+                      >
+                        Restaurar original
+                      </button>
+                    )}
+                    <div className="flex gap-3 ml-auto">
+                      <button onClick={() => setCropSrc(null)} className="px-3 py-1 border rounded">
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={onConfirmCrop}
+                        className="px-3 py-1 bg-[var(--first-color)] text-[var(--dark-color)] hover:text-white hover:bg-[var(--first-color-alt)] border rounded"
+                      >
+                        Confirmar
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
+
             <div className="absolute top-2 right-2 flex gap-2">
               <button
                 onClick={() => openFilePicker()}
-                className="px-3 py-1.5 text-sm rounded-md bg-white/90 border hover:bg-white"
+                className="w-8 h-8 rounded-full bg-white/90 border flex items-center justify-center hover:bg-white"
+                title="Trocar imagem"
               >
-                Trocar
+                <Pencil size={16} />
               </button>
               {images.length > 0 && (
                 <button
                   onClick={() => removeImage(0)}
-                  className="px-3 py-1.5 text-sm rounded-md bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+                  className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow hover:bg-red-700"
+                  title="Remover imagem"
                 >
-                  Remover
+                  <Trash2 size={16} />
                 </button>
               )}
             </div>

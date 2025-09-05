@@ -1,20 +1,37 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext"; // importa contexto de auth
 
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
+  const { user, ready } = useAuth(); // agora usamos também o ready
+  const storageKey = user?.email ? `cart_${user.email}` : "cart_guest";
+
   const [cartItems, setCartItems] = useState([]);
 
-  // Carrega do localStorage
+  // Carrega carrinho do usuário logado
   useEffect(() => {
-    const saved = localStorage.getItem("cartItems");
-    if (saved) setCartItems(JSON.parse(saved));
-  }, []);
+    if (!ready) return; // só executa depois que AuthContext estiver pronto
 
-  // Salva no localStorage
+    if (!storageKey) {
+      setCartItems([]); // se não tiver usuário logado, limpa carrinho
+      return;
+    }
+
+    try {
+      const saved = localStorage.getItem(storageKey);
+      setCartItems(saved ? JSON.parse(saved) : []);
+    } catch {
+      setCartItems([]);
+    }
+  }, [ready, storageKey]);
+
+  // Salva carrinho no localStorage vinculado ao usuário
   useEffect(() => {
-    localStorage.setItem("cartItems", JSON.stringify(cartItems));
-  }, [cartItems]);
+    if (storageKey && ready) {
+      localStorage.setItem(storageKey, JSON.stringify(cartItems));
+    }
+  }, [cartItems, storageKey, ready]);
 
   const addToCart = (product) => {
     setCartItems((prev) => {
@@ -38,14 +55,16 @@ export const CartProvider = ({ children }) => {
     setCartItems((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const clearCart = () => setCartItems([]);
+  const clearCart = () => {
+    setCartItems([]);
+    if (storageKey) localStorage.removeItem(storageKey);
+  };
 
   const cartTotal = cartItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
   );
 
-  // 🔹 Novo: conta todas as quantidades
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
@@ -57,7 +76,7 @@ export const CartProvider = ({ children }) => {
         removeFromCart,
         clearCart,
         cartTotal,
-        cartCount, // 🔹 exportado pro Header
+        cartCount,
       }}
     >
       {children}

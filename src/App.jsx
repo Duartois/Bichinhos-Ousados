@@ -3,7 +3,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Category from "./pages/Category";
-import { UserDashboard, SellerDashboard } from "./pages/dashboard";
+import { UserDashboard, AdminDashboard } from "./pages/dashboard";
 import Login from "./pages/Login";        // <-- ADICIONAR
 import Register from "./pages/Register";
 import ProductDetails from "./pages/ProductDetails";
@@ -12,8 +12,9 @@ import Checkout from "./pages/Checkout";
 import Success from "./pages/Success";
 import Cancel from "./pages/Cancel";
 import { AuthProvider } from "./context/AuthContext";
-import { RequireAuth, RequireSeller } from "./routes/guards";
-import AddProduct from "./pages/dashboard/AddProduct";
+import { RequireAuth, RequireAdmin } from "./routes/guards";
+import AddProduct from "./pages/dashboard/admin/AddProduct";
+import AdminOrders from "./pages/dashboard/admin/AdminOrders";
 
 function App() {
   return (
@@ -24,13 +25,10 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/category" element={<Category />} />
-              <Route path="/account" element={
-                <RequireAuth><UserDashboard /></RequireAuth>
-              } />
-              <Route path="/dashboard" element={
-                <RequireSeller><SellerDashboard /></RequireSeller>
-              } />
-            <Route path="/add-product" element={<AddProduct />} /> 
+            <Route path="/account" element={<RequireAuth><UserDashboard /></RequireAuth>} />
+            <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
+            <Route path="/admin/orders" element={<RequireAdmin><AdminOrders /></RequireAdmin>} />
+            <Route path="/add-product" element={<AddProduct />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/product/:id" element={<ProductDetails />} />

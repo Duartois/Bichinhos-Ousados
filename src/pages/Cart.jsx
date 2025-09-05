@@ -52,7 +52,7 @@ const Cart = ({ cartOpen, setCartOpen }) => {
         }`}
       >
         {/* Header */}
-        <div className="flex justify-between items-center border-b p-4">
+        <div className="flex justify-between items-center border-b-[1px] border-gray-200 p-4">
           <h2 className="text-lg font-semibold text-cyan-600">Seu Carrinho</h2>
           <button onClick={handleClose} aria-label="Fechar">
             <FiX className="text-2xl text-gray-600 hover:text-cyan-600" />

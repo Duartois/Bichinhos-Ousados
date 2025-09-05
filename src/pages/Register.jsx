@@ -4,6 +4,7 @@ import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
+
 const Register = () => {
   const { login } = useAuth();
   const [name, setName] = useState("");
@@ -46,7 +47,7 @@ const Register = () => {
 
     try {
       // Cadastro (agora com number e tac)
-      const res = await axios.post("https://api-server-orcin.vercel.app/register", {
+      const res = await axios.post("https://api-server-orcin.vercel.app/api/register", {
         name,
         email,
         password,
@@ -54,17 +55,17 @@ const Register = () => {
         tac,
       });
 
-      // Sucesso no backend = HTTP 201 + objeto {name,email,seller}
+      // Sucesso no backend = HTTP 201 + objeto {name,email,admin}
       if (res.status === 201 && res.data?.email) {
         // Login automático
-        const loginRes = await axios.post("https://api-server-orcin.vercel.app/login", {
+        const loginRes = await axios.post("https://api-server-orcin.vercel.app/api/login", {
           email,
           password,
         });
 
         if (loginRes.data && loginRes.data.email) {
           login(loginRes.data);   // ✅ atualiza contexto
-          if (loginRes.data.seller) navigate("/dashboard");
+          if (loginRes.data.admin) navigate("/admin");
           else navigate("/account");
         }
 

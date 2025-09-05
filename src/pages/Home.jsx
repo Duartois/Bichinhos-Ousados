@@ -25,13 +25,13 @@ const Home = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const resNew = await api.post("/get-products", { badge: "new" });
+        const resNew = await api.post("/api/get-products", { badge: "new" });
         setNewProducts(resNew.data || []);
 
-        const resFeatured = await api.post("/get-products", { badge: "featured" });
+        const resFeatured = await api.post("/api/get-products", { badge: "featured" });
         setFeaturedProducts(resFeatured.data?.length ? resFeatured.data : []);
 
-        const resPopular = await api.post("/get-products", { badge: "popular" });
+        const resPopular = await api.post("/api/get-products", { badge: "popular" });
         setPopularProducts(resPopular.data?.length ? resPopular.data : []);
 
       } catch (err) {

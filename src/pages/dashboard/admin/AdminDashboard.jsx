@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
+import api from "../../../services/api";
+import { useAuth } from "../../../context/AuthContext";
 import { PlusCircle, Search, Package, ShoppingCart, Settings, PackageX, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Pencil, Trash2 } from "lucide-react";
+import { useNotification } from "../../../context/NotificationContext";
+import { useConfirm } from "../../../context/ConfirmContext";
 
-const SellerDashboard = () => {
+
+
+const AdminDashboard = () => {
     const { user, logout } = useAuth();
     const [products, setProducts] = useState([]);
     const [search, setSearch] = useState("");
@@ -14,17 +18,24 @@ const SellerDashboard = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const productsPerPage = 15;
     const navigate = useNavigate();
+    const { showNotification } = useNotification();
+    const { confirm } = useConfirm();
+
 
     useEffect(() => {
         if (!user) return navigate("/login");
-        if (!user.seller) return navigate("/account");
+        if (!user.admin) return navigate("/account");
 
         const fetchProducts = async () => {
             try {
-                const res = await api.post("/get-products", { email: user.email });
-                setProducts(res.data || []);
+                const prodRes = await api.post("/api/get-products", { email: user.email });
+                setProducts(prodRes.data || []);
+                const orderRes = await api.post("/api/get-orders", { adminId: user.email });
+                setOrders(orderRes.data || []);
+
+
             } catch (err) {
-                console.error("Erro ao carregar produtos:", err);
+                showNotification("Não foi possível carregar seus produtos. Tente novamente em alguns minutos.");
             } finally {
                 setLoading(false);
             }
@@ -93,7 +104,6 @@ const SellerDashboard = () => {
                         <PlusCircle size={20} /> Novo Produto
                     </button>
                 </div>
-
                 {/* Busca */}
                 <div className="relative w-full sm:w-2/3 md:w-1/2 mb-6">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -128,9 +138,17 @@ const SellerDashboard = () => {
                                         </div>
                                         <div className="flex-1 p-5 flex flex-col justify-between">
                                             <div>
-                                                <h2 className="font-display text-lg sm:text-xl font-semibold text-[var(--dark-color)] truncate">
-                                                    {product.name}
-                                                </h2>
+                                                <div className="flex items-center justify-between">
+                                                    <h2 className="font-display text-lg sm:text-xl font-semibold text-[var(--dark-color)] truncate">
+                                                        {product.name}
+                                                    </h2>
+
+                                                    {product.draft && (
+                                                        <span className="inline-block mt-1 text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800 font-medium">
+                                                            Draft
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <p className="text-xs uppercase tracking-wide text-gray-500 mt-1">
                                                     {product.category}
                                                 </p>
@@ -147,15 +165,18 @@ const SellerDashboard = () => {
                                                 </button>
                                                 <button
                                                     onClick={async () => {
-                                                        if (confirm("Tem certeza que deseja excluir este produto?")) {
-                                                            await api.post("/delete-product", { id: product.id });
+                                                        const ok = await confirm("Tem certeza que deseja excluir este produto?");
+                                                        if (ok) {
+                                                            await api.post("/api/delete-product", { id: product.id });
                                                             setProducts(products.filter((p) => p.id !== product.id));
+                                                            showNotification("Produto excluído com sucesso!", "success");
                                                         }
                                                     }}
                                                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
                                                 >
                                                     <Trash2 size={16} /> Excluir
                                                 </button>
+
                                             </div>
                                         </div>
                                     </motion.div>
@@ -253,4 +274,4 @@ const SellerDashboard = () => {
     );
 };
 
-export default SellerDashboard;
+export default AdminDashboard;

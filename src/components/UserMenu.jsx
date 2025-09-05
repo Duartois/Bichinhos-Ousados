@@ -53,10 +53,10 @@ const UserMenu = () => {
 
           {/* Links dinâmicos */}
           <ul className="py-1 text-sm">
-            {user.seller ? (
+            {user.admin ? (
               <li>
                 <button
-                  onClick={() => navigate("/dashboard")}
+                  onClick={() => navigate("/admin")}
                   className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
                 >
                   <Store size={16} /> Dashboard
@@ -74,7 +74,7 @@ const UserMenu = () => {
                 </li>
                 <li>
                   <button
-                    onClick={() => navigate("/seller")}
+                    onClick={() => navigate("/admin")}
                     className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
                   >
                     <Store size={16} /> Seja um vendedor

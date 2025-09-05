@@ -27,7 +27,7 @@ const Category = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await api.post("/get-products");
+        const res = await api.post("/api/get-products");
         setProducts(res.data || []);
         setFilteredProducts(res.data || []);
       } catch (err) {

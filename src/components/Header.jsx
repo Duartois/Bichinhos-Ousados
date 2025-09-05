@@ -33,7 +33,7 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const isDashboard = location.pathname.startsWith("/dashboard");
+  const isDashboard = location.pathname.startsWith("/admin");
 
   const handleCloseMenu = () => {
     setMenuClosing(true);
@@ -80,7 +80,7 @@ const Header = () => {
       }
       try {
         setLoading(true);
-        const res = await api.post("/get-products");
+        const res = await api.post("/api/get-products");
         const all = res.data || [];
 
         const term = normalize(query);
@@ -187,7 +187,7 @@ const Header = () => {
           <ul className="hidden md:flex gap-10 font-semibold tracking-wide py-3">
             <li><Link to="/" className="hover:text-[var(--light-color)]">Início</Link></li>
             <li><Link to="/category" className="hover:text-[var(--light-color)]">Catálogo</Link></li>
-            <li><Link to={isLoggedIn ? "/dashboard" : "/login"} className="hover:text-[var(--light-color)]">Minha Conta</Link></li>
+            <li><Link to={isLoggedIn ? "/admin" : "/login"} className="hover:text-[var(--light-color)]">Minha Conta</Link></li>
             <li>
               <Link to="/404" className="relative hover:text-[var(--light-color)]">
                 Receitas
@@ -249,17 +249,17 @@ const Header = () => {
                 {isDashboard ? (
                   <>
                     <li>
-                      <Link to="/dashboard" onClick={handleCloseMenu} className="flex items-center gap-2">
+                      <Link to="/admin" onClick={handleCloseMenu} className="flex items-center gap-2">
                         <Package size={18} /> Produtos
                       </Link>
                     </li>
                     <li>
-                      <Link to="/dashboard/orders" onClick={handleCloseMenu} className="flex items-center gap-2">
+                      <Link to="/admin/orders" onClick={handleCloseMenu} className="flex items-center gap-2">
                         <ShoppingCart size={18} /> Pedidos
                       </Link>
                     </li>
                     <li>
-                      <Link to="/dashboard/settings" onClick={handleCloseMenu} className="flex items-center gap-2">
+                      <Link to="/admin/settings" onClick={handleCloseMenu} className="flex items-center gap-2">
                         <Settings size={18} /> Configurações
                       </Link>
                     </li>
@@ -269,7 +269,7 @@ const Header = () => {
                     <li><Link to="/" onClick={handleCloseMenu}>Início</Link></li>
                     <li><Link to="/category" onClick={handleCloseMenu}>Catálogo</Link></li>
                     <li>
-                      <Link to={isLoggedIn ? "/dashboard" : "/login"} onClick={handleCloseMenu}>
+                      <Link to={isLoggedIn ? "/admin" : "/login"} onClick={handleCloseMenu}>
                         Minha Conta
                       </Link>
                     </li>
@@ -312,7 +312,7 @@ const Header = () => {
               ) : (
                 isLoggedIn ? (
                   <Link
-                    to="/dashboard"
+                    to="/admin"
                     onClick={handleCloseMenu}
                     className="flex items-center gap-2 text-gray-700 hover:text-cyan-600 font-medium"
                   >

@@ -1,6 +1,12 @@
 import { Link } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 
 const Success = () => {
+  const { clearCart } = useCart();
+  useEffect(() => {
+    clearCart();
+  }, []);
+
   return (
     <div className="sc-container">
       <img src="/assets/img/success.png" alt="Compra concluída" />

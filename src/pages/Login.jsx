@@ -4,7 +4,6 @@ import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
-
 const Login = () => {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
@@ -20,20 +19,22 @@ const Login = () => {
     setError("");
 
     try {
-      const res = await axios.post("https://api-server-orcin.vercel.app/login", {
+      const res = await axios.post("https://api-server-orcin.vercel.app/api/login", {
         email,
         password,
       });
 
       if (res.data && res.data.email) {
-        // Atualiza o contexto e o sessionStorage ao mesmo tempo
+        // Atualiza o contexto e sessionStorage
         login(res.data);
 
-        // Redirecionamento centralizado
-        if (res.data.seller) {
-          navigate("/dashboard");   // adm/seller
+        // Redirecionamento: volta pro checkout se veio de lá
+        const redirectPath = sessionStorage.getItem("redirectAfterLogin");
+        if (redirectPath) {
+          sessionStorage.removeItem("redirectAfterLogin");
+          navigate(redirectPath, { replace: true });
         } else {
-          navigate("/account");     // cliente
+          navigate(res.data.admin ? "/admin" : "/account", { replace: true });
         }
       } else {
         setError(res.data.alert || "Erro desconhecido.");

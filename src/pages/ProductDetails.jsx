@@ -27,7 +27,7 @@ const ProductDetails = () => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const res = await api.get(`/get-reviews?productId=${id}`);
+        const res = await api.get(`/api/get-reviews?productId=${id}`);
         const data = res.data || [];
         setReviews(data);
 
@@ -48,7 +48,7 @@ const ProductDetails = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await api.get(`/product-data?id=${id}`);
+        const res = await api.get(`/api/product-data?id=${id}`);
         setProduct(res.data);
         setMainImage(res.data.image || "/assets/img/noImage.png");
       } catch (err) {
@@ -62,7 +62,7 @@ const ProductDetails = () => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const res = await api.get(`/get-reviews?productId=${id}`);
+        const res = await api.get(`/api/get-reviews?productId=${id}`);
         setReviews(res.data || []);
       } catch (err) {
         console.error("Erro ao buscar avaliações:", err.message);
@@ -76,7 +76,7 @@ const ProductDetails = () => {
     const fetchRelated = async () => {
       try {
         if (product?.category) {
-          const res = await api.post("/get-products", { category: product.category });
+          const res = await api.post("/api/get-products", { category: product.category });
           const items = res.data.filter((p) => p.id !== product.id);
           setRelated(items.slice(0, 4));
         }
@@ -91,7 +91,7 @@ const ProductDetails = () => {
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/add-review", {
+      await api.post("/api/add-review", {
         productId: id,
         ...reviewForm,
       });

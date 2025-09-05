@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
     } catch {
       setUser(null);
     } finally {
-      setReady(true); // <- SÓ AQUI liberamos os guardiões
+      setReady(true); // <- só aqui liberamos os guardiões
     }
   }, []);
 
@@ -48,7 +48,17 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  const login = (userData) => setUser({ ...userData, lastActivity: Date.now() });
+  // ✅ Login com migração do carrinho guest -> user
+  const login = (userData) => {
+    const guestCart = localStorage.getItem("cart_guest");
+    if (guestCart) {
+      localStorage.setItem(`cart_${userData.email}`, guestCart);
+      localStorage.removeItem("cart_guest");
+    }
+
+    setUser({ ...userData, lastActivity: Date.now() });
+  };
+
   const logout = () => setUser(null);
 
   return (
