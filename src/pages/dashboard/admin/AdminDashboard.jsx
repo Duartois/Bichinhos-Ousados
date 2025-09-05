@@ -3,16 +3,18 @@ import { useNavigate } from "react-router-dom";
 import api from "../../../services/api";
 import { useAuth } from "../../../context/AuthContext";
 import { PlusCircle, Search, Package, ShoppingCart, Settings, PackageX, LogOut } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import { Pencil, Trash2 } from "lucide-react";
 import { useNotification } from "../../../context/NotificationContext";
 import { useConfirm } from "../../../context/ConfirmContext";
+import AdminLayout from "../../../components/admin/AdminLayout";
 
 
 
 const AdminDashboard = () => {
     const { user, logout } = useAuth();
     const [products, setProducts] = useState([]);
+    const [orders, setOrders] = useState([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
@@ -32,16 +34,14 @@ const AdminDashboard = () => {
                 setProducts(prodRes.data || []);
                 const orderRes = await api.post("/api/get-orders", { adminId: user.email });
                 setOrders(orderRes.data || []);
-
-
-            } catch (err) {
+            } catch {
                 showNotification("Não foi possível carregar seus produtos. Tente novamente em alguns minutos.");
             } finally {
                 setLoading(false);
             }
         };
         fetchProducts();
-    }, [user, navigate]);
+    }, [user, navigate, showNotification]);
 
     const filteredProducts = products.filter(
         (p) =>
@@ -60,38 +60,10 @@ const AdminDashboard = () => {
         }
     };
     return (
+        <AdminLayout>
         <div className="flex min-h-screen bg-gray-50">
-            {/* Sidebar desktop */}
-            <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 p-6 flex-col">
-                <h2 className="font-display text-2xl font-bold text-gray-900 mb-8">Painel</h2>
-                <nav className="flex flex-col gap-4 text-gray-700 font-medium flex-1">
-                    <button className="flex items-center gap-2 hover:text-cyan-600 transition">
-                        <Package size={18} /> Produtos
-                    </button>
-                    <button
-                        onClick={() => navigate("/admin/orders")}
-                        className="flex items-center gap-2 hover:text-cyan-600 transition"
-                    >
-                        <ShoppingCart size={18} /> Pedidos
-                    </button>
-                    {/* TODO: adicionar navegação para configurações quando a rota existir */}
-                    <button className="flex items-center gap-2 hover:text-cyan-600 transition">
-                        <Settings size={18} /> Configurações
-                    </button>
-                </nav>
-                <button
-                    onClick={() => {
-                        logout();
-                        navigate("/login");
-                    }}
-                    className="mt-6 flex items-center gap-2 text-red-600 hover:text-red-700 font-medium"
-                >
-                    <LogOut size={18} /> Sair
-                </button>
-            </aside>
-
             {/* Conteúdo principal */}
-            <motion.main
+            <Motion.main
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
@@ -129,7 +101,7 @@ const AdminDashboard = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8">
                             <AnimatePresence>
                                 {paginatedProducts.map((product) => (
-                                    <motion.div
+                                    <Motion.div
                                         key={product.id}
                                         className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition overflow-hidden flex flex-col border border-[var(--first-color-alt)]"
                                     >
@@ -183,7 +155,7 @@ const AdminDashboard = () => {
 
                                             </div>
                                         </div>
-                                    </motion.div>
+                                    </Motion.div>
                                 ))}
                             </AnimatePresence>
                         </div>
@@ -273,8 +245,9 @@ const AdminDashboard = () => {
                         </div>
                     )
                 )}
-            </motion.main>
+            </Motion.main>
         </div>
+        </AdminLayout>
     );
 };
 

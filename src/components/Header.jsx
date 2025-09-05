@@ -31,6 +31,14 @@ const Header = () => {
   const searchRef = useRef(null);
   const desktopSearchRef = useRef(null);
   const location = useLocation();
+  const hideFullHeader =
+    location.pathname.startsWith("/login") ||
+    location.pathname.startsWith("/register");
+
+  const hideIcons =
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/checkout");
+
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isDashboard = location.pathname.startsWith("/admin");
@@ -102,22 +110,27 @@ const Header = () => {
   }, [query]);
 
   return (
+
     <header className="w-full shadow-md relative z-[150]">
       {/* ===== Faixa branca ===== */}
       <div className="bg-white">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
           {/* Mobile: menu + lupa */}
+
           <div className="flex items-center gap-3 md:hidden">
             <button onClick={() => setMenuOpen(true)} className="text-gray-700 hover:text-[var(--first-color)]">☰</button>
-            <button onClick={() => setSearchOpen(true)} className="text-gray-700 hover:text-[var(--first-color)]">
-              <Search size={22} />
-            </button>
+            {!hideIcons && (
+              <button onClick={() => setSearchOpen(true)} className="text-gray-700 hover:text-[var(--first-color)]">
+                <Search size={22} />
+              </button>
+            )}
           </div>
 
           {/* Logo */}
           <Link to="/" className="flex-shrink-0">
-            <img />
+            <img src="/assets/img/Logo.png" alt="Logo" className="h-10" />
           </Link>
+
 
           {/* Search desktop */}
           <div ref={desktopSearchRef} className="hidden md:block flex-grow max-w-xl mx-6 relative">
@@ -171,50 +184,55 @@ const Header = () => {
           </div>
 
           {/* Ícones */}
-          <div className="flex items-center gap-5 flex-shrink-0">
-            <UserMenu />
-            <button onClick={() => setCartOpen(true)} className="relative text-gray-700 hover:text-[var(--first-color)]">
-              <ShoppingCart size={22} />
-              {cartCount > 0 && <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{cartCount}</span>}
-            </button>
-          </div>
+          {!hideIcons && (
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <UserMenu />
+              <button onClick={() => setCartOpen(true)} className="relative text-gray-700 hover:text-[var(--first-color)]">
+                <ShoppingCart size={22} />
+                {cartCount > 0 && <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{cartCount}</span>}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* ===== Faixa azul ===== */}
-      <div className="bg-[var(--first-color)] text-white">
-        <div className="container mx-auto px-4 flex justify-center">
-          <ul className="hidden md:flex gap-10 font-semibold tracking-wide py-3">
-            <li><Link to="/" className="hover:text-[var(--light-color)]">Início</Link></li>
-            <li><Link to="/category" className="hover:text-[var(--light-color)]">Catálogo</Link></li>
-            <li><Link to={isLoggedIn ? "/admin" : "/login"} className="hover:text-[var(--light-color)]">Minha Conta</Link></li>
-            <li>
-              <Link to="/404" className="relative hover:text-[var(--light-color)]">
-                Receitas
-                <span className="absolute ml-1 z-0 text-[7px] uppercase font-medium px-1 py-[0.5px] rounded border border-[var(--first-color)] bg-white text-[var(--first-color)] opacity-80 group-hover:opacity-100 transition">
-                  beta
-                </span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/404" className="relative hover:text-[var(--light-color)]">
-                Cursos
-                <span className="absolute ml-1 z-0 text-[7px] uppercase font-medium px-1 py-[0.5px] rounded border border-[var(--first-color)] bg-white text-[var(--first-color)] opacity-80 group-hover:opacity-100 transition">
-                  beta
-                </span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/404" className="relative hover:text-[var(--light-color)]">
-                Lojinha
-                <span className="absolute ml-1 z-0 text-[7px] uppercase font-medium px-1 py-[0.5px] rounded border border-[var(--first-color)] bg-white text-[var(--first-color)] opacity-80 group-hover:opacity-100 transition">
-                  beta
-                </span>
-              </Link>
-            </li>
-          </ul>
+      {!hideFullHeader && (
+        <div className="bg-[var(--first-color)] text-white">
+          <div className="container mx-auto px-4 flex justify-center">
+            <ul className="hidden md:flex gap-10 font-semibold tracking-wide py-3">
+              <li><Link to="/" className="hover:text-[var(--light-color)]">Início</Link></li>
+              <li><Link to="/category" className="hover:text-[var(--light-color)]">Catálogo</Link></li>
+              <li><Link to={isLoggedIn ? "/admin" : "/login"} className="hover:text-[var(--light-color)]">Minha Conta</Link></li>
+              <li>
+                <Link to="/404" className="relative hover:text-[var(--light-color)]">
+                  Receitas
+                  <span className="absolute ml-1 z-0 text-[7px] uppercase font-medium px-1 py-[0.5px] rounded border border-[var(--first-color)] bg-white text-[var(--first-color)] opacity-80 group-hover:opacity-100 transition">
+                    beta
+                  </span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/404" className="relative hover:text-[var(--light-color)]">
+                  Cursos
+                  <span className="absolute ml-1 z-0 text-[7px] uppercase font-medium px-1 py-[0.5px] rounded border border-[var(--first-color)] bg-white text-[var(--first-color)] opacity-80 group-hover:opacity-100 transition">
+                    beta
+                  </span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/404" className="relative hover:text-[var(--light-color)]">
+                  Lojinha
+                  <span className="absolute ml-1 z-0 text-[7px] uppercase font-medium px-1 py-[0.5px] rounded border border-[var(--first-color)] bg-white text-[var(--first-color)] opacity-80 group-hover:opacity-100 transition">
+                    beta
+                  </span>
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
-      </div>
+      )}
+
       {/* ===== MENU MOBILE =====*/}
       {(menuOpen || menuClosing) && (
         <div className="fixed inset-0 z-[300] flex">
@@ -226,7 +244,6 @@ const Header = () => {
           />
 
           {/* Drawer vindo da esquerda */}
-          {/* Drawer vindo da esquerda */}
           <div
             ref={menuRef}
             className={`w-[80%] sm:w-[320px] h-full bg-white shadow-2xl flex flex-col
@@ -234,7 +251,7 @@ const Header = () => {
           >
             {/* Logo + Fechar */}
             <div className="p-6 border-b flex items-center justify-between">
-              <img src="/assets/img/logo.svg" alt="logo" className="h-12" />
+              <img src="/assets/img/Logo.png" alt="logo" className="h-12" />
               <button
                 onClick={handleCloseMenu}
                 className="text-2xl text-gray-600 hover:text-cyan-600"
@@ -299,17 +316,18 @@ const Header = () => {
             {/* Rodapé dinâmico */}
             <div className="border-t px-6 py-4">
               {isDashboard ? (
+                // se está no /admin: apenas sai da dashboard (volta para a loja)
                 <button
                   onClick={() => {
-                    logout();
                     handleCloseMenu();
-                    navigate("/login");
+                    navigate("/"); // volta para home
                   }}
                   className="flex items-center gap-2 text-red-600 hover:text-red-700 font-medium"
                 >
-                  <LogOut size={20} /> Sair
+                  <LogOut size={20} /> Sair da Dashboard
                 </button>
               ) : (
+                // fora do /admin, mostra opções normais
                 isLoggedIn ? (
                   <Link
                     to="/admin"
@@ -329,6 +347,7 @@ const Header = () => {
                 )
               )}
             </div>
+
           </div>
         </div>
       )}
@@ -394,7 +413,6 @@ const Header = () => {
           </div>
         </div>
       )}
-
       {/* Carrinho */}
       <Cart cartOpen={cartOpen} setCartOpen={setCartOpen} />
     </header>

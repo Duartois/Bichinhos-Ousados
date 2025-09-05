@@ -38,7 +38,7 @@ const UserMenu = () => {
     <div className="relative" ref={menuRef}>
       <button
         onClick={handleClick}
-        className="p-2 rounded-full hover:bg-gray-200 transition"
+        className="pt-2 rounded-full hover:bg-gray-200 transition"
       >
         <User className="w-6 h-6 text-gray-700" />
       </button>

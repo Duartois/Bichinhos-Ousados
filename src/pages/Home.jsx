@@ -4,6 +4,7 @@ import "swiper/css/bundle";
 import api from "../services/api";
 import ProductCard from "../components/ProductCard";
 import Showcase from "../components/Showcase";
+import Newsletter from "../components/Newsletter";
 
 const Home = () => {
   const [newProducts, setNewProducts] = useState([]);
@@ -65,24 +66,16 @@ const Home = () => {
 
   return (
     <main className="main">
-      {/* ======= BANNER / SLIDER ======= */}
-      <section className="banner-slide section container">
-        <div className="swiper banner-slider">
-          <div className="swiper-wrapper">
-            <div className="swiper-slide">
-              <img src="/assets/img/banner1.png" alt="Banner 1" />
-            </div>
-            <div className="swiper-slide">
-              <img src="/assets/img/banner2.png" alt="Banner 2" />
-            </div>
-            <div className="swiper-slide">
-              <img src="/assets/img/banner3.png" alt="Banner 3" />
-            </div>
-          </div>
-          <div className="swiper-pagination"></div>
+      {/* ======= BANNER ÚNICO ======= */}
+      <section className="">
+        <div className="w-full">
+          <img
+            src="/assets/img/Banner.jpg"
+            alt="Banner"
+            className="w-full h-auto object-cover rounded-lg shadow"
+          />
         </div>
       </section>
-
       {/* ======= HOME HERO ======= */}
       <section className="home section--lg">
         <div className="home__container container grid">
@@ -192,35 +185,10 @@ const Home = () => {
           />
         </div>
       </section>
+
       {/* ======= NEWSLETTER ======= */}
-      <section className="newsletter section home__newsletter">
-        <div className="newsletter__container container grid gap-6 items-center text-center md:text-left md:grid-cols-[2fr_3fr_2fr]">
-          <h3 className="newsletter__title flex">
-            <img
-              src="/assets/img/icon-email.svg"
-              alt="email"
-              className="newsletter__icon"
-            />
-            Faça parte da nossa Comunidade!
-          </h3>
-          <p className="newsletter__description">
-            ... e receba ofertas imperdiveis!
-          </p>
-          <form className="newsletter__form flex flex-col sm:flex-row gap-2 sm:gap-0">
-            <input
-              type="email"
-              placeholder="Digite seu e-mail"
-              className="newsletter__input flex-1 bg-white h-12 px-5 rounded sm:rounded-l border text-sm"
-            />
-            <button
-              type="submit"
-              className="newsletter__btn bg-cyan-600 text-white px-6 h-12 rounded sm:rounded-r text-sm hover:bg-cyan-700 transition"
-            >
-              Inscrever-se
-            </button>
-          </form>
-        </div>
-      </section>
+      <Newsletter />
+
     </main>
   );
 };

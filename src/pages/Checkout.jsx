@@ -128,12 +128,16 @@ const Checkout = () => {
         });
       }
 
+      // pega o admin dono do produto (assumindo que todos os itens do carrinho são da mesma loja/admin)
+      const adminEmail = cartItems[0]?.email || "default";
+
       const res = await api.post("/api/stripe-checkout", {
         items,
         address,
         email: user?.email,
-        adminId: user?.adminId || "default",
+        adminId: adminEmail,
       });
+
 
       if (res.data.url) {
         window.location.href = res.data.url;
